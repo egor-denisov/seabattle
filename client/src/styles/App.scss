@@ -1,0 +1,132 @@
+$slate-gray: #717c89ff;
+$pewter-blue: #8aa2a9ff;
+$cambridge-blue: #90baadff;
+$eerie-black: #1b1b1eff;
+$orange-soda: #f06543ff;
+$bg-main:#f6f7f9ff;
+$bg-scnd:#f3f4f6ff;
+$text-color:#3b3c3eff;
+*{
+  margin:0px;
+  padding: 0px;
+  box-sizing: border-box;
+  font-family: 'Raleway', sans-serif;
+  body{
+    background-color: $bg-main;
+  }
+  .header{
+    text-align: center;
+    font-size: 5vh;
+    background-color: $bg-scnd;
+    color:$text-color;
+    h1{
+      font-weight: 500;
+    }
+  }
+  .startPage{
+    font-size: 36px;
+    margin-top: 20px;
+    height: 60vh;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    .container{
+      display: flex;
+      button{
+        width: 25%;
+        margin-left: 4px;
+      }
+    }
+  }
+  .battleMaps{
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    padding-bottom: 50px;
+  }
+  .gameblock{
+    text-align: center;
+    margin-top: 30px;
+    .table{
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      grid-gap: 2px;
+      min-width: 300px;
+      .ceilContent{
+        background-color: white;
+        aspect-ratio: 1 / 1;
+        font-size: 24px;
+        width: 3.5vw;
+        min-width: 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border:#20b0b1ff 1px solid;
+      }
+      .condition0{
+        background-color: white;
+      }
+      .condition2{
+        background-color: #20b0b1ff;
+      }
+      .condition3{
+        background-color: rgb(196, 196, 196);
+        border:rgb(196, 196, 196) 1px solid;
+      }
+      .condition4{
+        background-color: $orange-soda;
+        border: $orange-soda 1px solid;
+      }
+    }
+    .buttons{
+      min-width: 318px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .buttons button{
+      margin-left: 2px;
+      margin-right: 2px;
+    }
+    .buttons button:last-child{
+      width:200%;
+    }
+  }
+  .enemyMap .condition0:hover{
+    cursor: pointer;
+  }
+  .waitPage, .gameOverPage{
+    height: 85vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    p{
+      font-size: 24px;
+      text-align: center;
+    }
+    .waiter{
+      animation: wheelRotate 5s infinite linear;
+    }
+    button{
+      width: 30vh;
+    }
+    .waiter, .emotion{
+      svg{
+        width: 30vh;
+        path{
+          fill: gray;
+        }
+      }
+    }
+    
+  }
+}
+
+@keyframes wheelRotate {
+	from{transform:rotate(0deg);}
+	25%{transform:rotate(30deg);}
+	50%{transform:rotate(0deg);}
+	75%{transform:rotate(-30deg);}
+	to{transform:rotate(0deg);}
+}

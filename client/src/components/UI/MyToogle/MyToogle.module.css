@@ -1,0 +1,27 @@
+.MyToogle{
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+.MyElToogle{
+    background-color: transparent;
+    border:#20b0b1ff 2px solid;
+    color:#20b0b1ff;
+    margin: 10px 0px;
+    width:132px;
+    height: 132px;
+    font-size: 32px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease-out;
+}
+.MyElToogle:hover{
+    background-color: rgba(32,176,177,0.1)
+}
+.MyElToogle.active{
+    background-color: #20b0b1ff;
+    border-color:transparent 2px solid;
+    color:white;
+    font-weight: 600;
+    cursor: default;
+}
