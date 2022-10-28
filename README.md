@@ -73,6 +73,7 @@ This paragraph contains some of the features of this project:
 - When leaving the page while playing with real people, 10 seconds are given to reconnect the player. At the end of time, defeat will be defended.
 - In addition to the random placement of ships, the functionality of dragging ships has been implemented, as well as ship rotation (double-clicked)
 - When randomly generating a nickname, a random adjective and animal are taken
+- In addition to the ability to choose gamemode, you can choose the speed of the game: Slow(19s for move) and Fast(59s for move)
 
 ## Dependencies
 - React.js
