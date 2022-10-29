@@ -1,6 +1,6 @@
 .MyToogle{
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     flex-wrap: wrap;
 }
 .MyElToogle{
@@ -8,20 +8,30 @@
     border:#20b0b1ff 2px solid;
     color:#20b0b1ff;
     margin: 10px 0px;
-    width:132px;
-    height: 132px;
+    width: 15vw;
+    height: 15vw;
+    max-width: 100px;
+    max-height: 100px;
+    min-width: 86px;
+    min-height: 86px;
     font-size: 32px;
-    border-radius: 25px;
+    border-radius: 25%;
     cursor: pointer;
     transition: all 0.3s ease-out;
 }
-.MyElToogle:hover{
-    background-color: rgba(32,176,177,0.1)
+.MyElToogle:not(.active):hover{
+    background-color: rgba(32, 176, 177, 0.1)
 }
 .MyElToogle.active{
     background-color: #20b0b1ff;
-    border-color:transparent 2px solid;
+    border-color: transparent 2px solid;
     color:white;
-    font-weight: 600;
     cursor: default;
+}
+.MyToogle.darkmode .MyElToogle.active{
+    background-color: #9999a1ff;
+    color: #cccccc;
+}
+.MyToogle.darkmode .MyElToogle:not(.active):hover{
+    background-color: rgba(153, 153, 161, 0.1);
 }

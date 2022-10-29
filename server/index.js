@@ -1,4 +1,5 @@
 const express = require("express");
+const checkShip = require("./scripts/checkShip");
 const app = express();
 const server = require("http").Server(app);
 const io = require("socket.io")(server, {
@@ -6,81 +7,171 @@ const io = require("socket.io")(server, {
         origin: '*'
     }
 });
-const getNearCeils = require("./scripts/getNearCeils");
+const getNearCells = require("./scripts/getNearCells");
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Listen on *: ${PORT}`));
-const readyUsers = new Map();
-const inGameUsers = new Map();
+const users = {
+    readyUsers: new Map(),
+    inGameUsers: new Map(),
+    disconUsers: new Map()
+}
+const timers = new Map();
 io.on("connection", socket => {
-    const id = socket.id;
-    let room = '';
-    socket.emit('yourID', id);
-    socket.on('ready', (gameMap) => {
-        if(readyUsers.size < 1){
-            readyUsers.set(id, gameMap);
-        }else{
-            const [enemyID] = readyUsers.keys();
-            room = enemyID + ' ' + id;
-            io.sockets.sockets.get(enemyID).join(room);
-            socket.join(room);
-            inGameUsers.set(id, gameMap).set(enemyID, readyUsers.get(enemyID));
-            io.to(id).emit('startGame', {firstMove: id, room: room, enemyID: enemyID});
-            io.to(enemyID).emit('startGame', {firstMove: id, room: room, enemyID: id});
-            readyUsers.delete(enemyID);
+    let data = {id: socket.id, room:'', enemyID: ''};
+    socket.emit('yourID', data.id);
+    // Timer
+    let timerData = {timeForMove: false, timeStartTimer: -1, time: 19000, move: ''};
+    const timer = ({move, waiter, time}) => {
+        timerData.timeForMove = setTimeout(async () => {
+            io.to(move).emit('gameOver', {win: false});
+            io.to(waiter).emit('gameOver', {win: true});
+            users.inGameUsers.delete(move);
+            users.inGameUsers.delete(waiter);
+        }, time);
+        timerData = {
+            ...timerData,
+            timeStartTimer: Date.now(),
+            time: time,
+            move: move
+        }
+        return timerData;
+    };
+    socket.on('searchTimer', (room) => {
+        if(timers.has(room)){
+            const t = timers.get(room)
+            if(t.timeForMove !== false){
+                socket.emit('changeTimer', t.time + t.timeStartTimer - Date.now())
+            }
         }
     });
+    // Reconnection
+    socket.on('wasInGame', (oldId) => {
+        if(users.disconUsers.has(oldId)){
+            let {gameMap, nickname, timeToMove, enemy, room, time, move} = users.disconUsers.get(oldId);
+            users.disconUsers.delete(oldId);
+            clearTimeout(timers.get(room).timeForMove);
+            if(users.inGameUsers.has(enemy) && io.sockets.sockets.has(enemy)){
+                data = {...data, enemyID: enemy, room: enemy + ' ' + data.id};
+                // exit from old room
+                io.in(room).socketsLeave(room);
+                // adding to new room
+                socket.join(data.room);
+                io.sockets.sockets.get(data.enemyID).join(data.room);
+                users.inGameUsers.set(data.id, {gameMap: gameMap, nickname: nickname, enemy: data.enemyID, room: data.room, timeToMove: timeToMove});
+                users.inGameUsers.set(data.enemyID, {...users.inGameUsers.get(data.enemyID), enemy: data.id, room: data.room, timeToMove: timeToMove});
+                const reconnData = {
+                    ...data,
+                    move: (oldId === move) ? data.id : data.enemyID,
+                    time: time,
+                    enemyNick: users.inGameUsers.get(data.enemyID).nickname,
+                    timeToMove: timeToMove
+                };
+                socket.emit('reconnectToRoom', reconnData);
+                io.to(data.enemyID).emit('enemyReconnect', {room: data.room, enemy: data.id});
+                timers.set(data.room, timer({move: reconnData.move, 
+                                             waiter: (data.id === reconnData.move) ? data.enemyID : data.id, 
+                                             time: time}));
+            }
+        }
+    });
+    // Ready
+    socket.on('ready', ({gameMap, nickname, timeToMove}) => {
+        if(Array.from(users.readyUsers.values()).filter(player => player.timeToMove === timeToMove).length < 1){
+            users.readyUsers.set(data.id, {gameMap: gameMap, nickname: nickname, timeToMove: timeToMove});
+        }else{
+            data = {...data, enemyID: [...users.readyUsers.keys()][0], room: [...users.readyUsers.keys()][0] + ' ' + data.id};
+            users.inGameUsers.set(data.id, {gameMap: gameMap, nickname: nickname, enemy: data.enemyID, room: data.room, timeToMove: timeToMove});
+            users.inGameUsers.set(data.enemyID, {...users.readyUsers.get(data.enemyID), enemy: data.id, room: data.room, timeToMove: timeToMove});
+            users.readyUsers.delete(data.enemyID);
+            // adding to room
+            socket.join(data.room);
+            io.sockets.sockets.get(data.enemyID).join(data.room);
+            // start game event
+            socket.emit('startGame', {
+                firstMove: data.id,
+                id: data.id,
+                room: data.room,
+                enemyID: data.enemyID,
+                enemyNick: users.inGameUsers.get(data.enemyID).nickname,
+                timeToMove: timeToMove
+            });
+            io.to(data.enemyID).emit('startGame', {
+                firstMove: data.id,
+                id: data.enemyID,
+                room: data.room,
+                enemyID: data.id,
+                enemyNick: nickname,
+                timeToMove: timeToMove
+            });
+            timers.set(data.room, timer({move: data.id, waiter: data.enemyID, time: timeToMove*1000}))
+        }
+    });
+    // shooting
     socket.on('shoot', ({id, room, enemy, coord}) => {
-        if(inGameUsers.get(enemy)[coord] < 2){
+        clearTimeout(timers.get(room).timeForMove);
+        let tempEnemyMap = [...users.inGameUsers.get(enemy).gameMap];
+        if(tempEnemyMap[coord] < 2){
+            tempEnemyMap = [...tempEnemyMap.slice(0, coord), 3, ...tempEnemyMap.slice(coord + 1)];
             socket.emit('missShoot', coord);
             io.to(enemy).emit('nextGambit', coord);
-        }else if(inGameUsers.get(enemy)[coord] === 2){
-            const enemyMap = [...inGameUsers.get(enemy)];
-            enemyMap[coord] = 4;
-            inGameUsers.set(enemy, enemyMap);
-            const nearCeils = new Map();
-            getNearCeils(coord).forEach(item => {
-                nearCeils.set(item, enemyMap[item]);
-            });
-            if(!Array.from(nearCeils.values()).includes(2)){
-                getNearCeils(coord).forEach(item => {
-                    nearCeils.set(item, enemyMap[item]);
-                    if(enemyMap[item] === 4 && item !== coord){
-                        getNearCeils(item).forEach(item2 => {
-                            nearCeils.set(item2, enemyMap[item2]);
-                            if(enemyMap[item2] === 4 && item !== item2){
-                                getNearCeils(item2).forEach(item3 => {
-                                    nearCeils.set(item3, enemyMap[item3]);
-                                    if(enemyMap[item3] === 4  && item2 !== item3){
-                                        getNearCeils(item3).forEach(item4 => {
-                                            nearCeils.set(item4, enemyMap[item4]);
-                                        });
-                                    }
-                                });
-                            }
-                        });
-                    }
+            timers.set(room, timer({move: enemy, waiter: id, time: users.inGameUsers.get(id).timeToMove * 1000}))
+        }else if(tempEnemyMap[coord] === 2){
+            tempEnemyMap = [...tempEnemyMap.slice(0, coord), 4, ...tempEnemyMap.slice(coord + 1)];
+            const ship = checkShip({coord: coord, map: tempEnemyMap});
+            if(!ship.map(cell => tempEnemyMap[cell]).includes(2)){
+                let nearCells = [];
+                ship.forEach(cell => {
+                    nearCells = [...nearCells, ...getNearCells(cell)]
                 });
-                io.to(id).emit('shipBroken', {nearCeils: Array.from(nearCeils.keys()),
-                                              field: true,
-                                              coord: coord});
-                io.to(enemy).emit('shipBroken', {nearCeils: Array.from(nearCeils.keys()),
+                socket.emit('shipBroken', {nearCells: nearCells,
+                                           field: true,
+                                           coord: coord});
+                io.to(enemy).emit('shipBroken', {nearCells: nearCells,
                                                  field: false,
                                                  coord: coord});
-                if(inGameUsers.get(enemy).filter(x => x==4).length === 20){
+                if(tempEnemyMap.filter(x => x==4).length === 20){
                     io.to(enemy).emit('gameOver', {win: false});
-                    io.to(id).emit('gameOver', {win: true});
-                    inGameUsers.delete(id);
-                    inGameUsers.delete(enemy);
+                    socket.emit('gameOver', {win: true});
+                    users.inGameUsers.delete(id);
+                    users.inGameUsers.delete(enemy);
                 }
             }else{
                 socket.emit('hitShoot', coord);
                 io.to(enemy).emit('hit', coord);
             }
-            
+            if(users.inGameUsers.has(id)){
+                timers.set(room, timer({move: id, waiter: enemy, time: users.inGameUsers.get(id).timeToMove * 1000}))
+            }
         }
-    })
-    socket.on("disconnecting", () => {
-        readyUsers.delete(id)
+        users.inGameUsers.set(enemy, {...users.inGameUsers.get(enemy), gameMap: tempEnemyMap});
     });
-    
-  });
+    //
+    socket.on('exitFromGame', () => {
+        if(users.readyUsers.has(data.id)){
+            users.readyUsers.delete(data.id);
+        }
+        if(users.inGameUsers.has(data.id)){
+            user = users.inGameUsers.get(data.id);
+            io.in(user.room).socketsLeave(user.room);
+            io.to(user.enemy).emit('gameOver', {win: true, status: 'discon'});
+            users.inGameUsers.delete(data.id);
+            users.inGameUsers.delete(user.enemy);
+            const t = (timers.has(user.room)) ? timers.get(user.room) : timerData;
+            clearTimeout(t.timeForMove);
+        }
+        
+        
+    })
+    // disconnection
+    socket.on("disconnecting", () => {
+        if(users.inGameUsers.has(data.id)){
+            const room = users.inGameUsers.get(data.id).room;
+            const t = (timers.has(room)) ? timers.get(room) : timerData;
+            clearTimeout(t.timeForMove);
+            users.disconUsers.set(data.id, {...users.inGameUsers.get(data.id), time: t.time - Date.now() + t.timeStartTimer, move: t.move});
+            io.to(room).emit('timerToReconnect');
+            setTimeout(() => io.to(room).emit('enemyDisconnect'), 10000);
+        }
+        users.readyUsers.delete(data.id);
+    });
+});

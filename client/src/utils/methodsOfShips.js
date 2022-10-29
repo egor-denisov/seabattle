@@ -1,126 +1,79 @@
-export const generateMap = (size) => {
-    const res = [];
-    for (var i = 0; i < size; i++) {
-        res.push(Array(10).fill(0));
-    }
-    return res;
-}
-export const fromMassivToMatrix = (mass, size) => {
-    const res = [];
-    for(let i = 0; i < size; i++){
-        res.push(mass.slice(i*size, i*size + size));
-    }
-    return res;
-}
-export const generateDefaultShips = () => {
-    return {// orientation: horizontal - 0, vertical - 1
-        1: [{ceil: 0, orientation: 0},
-            {ceil: 2, orientation: 0},
-            {ceil: 4, orientation: 0},
-            {ceil: 6, orientation: 0}],
-        2: [{ceil: 20, orientation: 0},
-            {ceil: 23, orientation: 0},
-            {ceil: 26, orientation: 0}],
-        3: [{ceil: 40, orientation: 0},
-            {ceil: 44, orientation: 0}],
-        4: [{ceil: 60, orientation: 0}]
-    }
-}
-export const CreateGameMap = (shipCoords) => {
-    const defaultMap = generateMap(10);
-        
-    Object.keys(shipCoords).forEach(deck => {
-        shipCoords[deck].forEach(ship => {
-            let coord = {x: ship.ceil%10, y: ~~(ship.ceil/10)}
-            if (ship.orientation){ // if orientation vertical
-                for(let i = coord.y; i < coord.y+Number(deck); i++){
-                    defaultMap[i][coord.x] = 1;
-                }
-            }else{
-                for(let i = coord.x; i < coord.x+Number(deck); i++){
-                    defaultMap[coord.y][i] = 1;
-                }
-            }
-        })
-    })
-    return defaultMap;
-}
-export const getNearCeils = (coordSelectedCeil) => {
-    let nearCeils = [];
-    if(coordSelectedCeil === 0){
-        nearCeils = [1, 10, 11]
-    }else if(coordSelectedCeil === 9){
-        nearCeils = [8, 18, 19]
-    }else if(coordSelectedCeil === 99){
-        nearCeils = [88, 89, 98]
-    }else if(coordSelectedCeil === 90){
-        nearCeils = [80, 81, 91]
-    }else if(coordSelectedCeil%10 === 9){
-        nearCeils = [coordSelectedCeil - 10, coordSelectedCeil + 10, 
-            coordSelectedCeil + 9, coordSelectedCeil - 1, coordSelectedCeil - 11]
-    }else if(coordSelectedCeil%10 === 0){
-        nearCeils = [coordSelectedCeil - 10, coordSelectedCeil - 9, coordSelectedCeil + 1, coordSelectedCeil + 11,
-            coordSelectedCeil + 10]
-    }else if(~~(coordSelectedCeil/10) === 0){
-        nearCeils = [coordSelectedCeil - 1, coordSelectedCeil + 10, 
-            coordSelectedCeil + 9, coordSelectedCeil + 1, coordSelectedCeil + 11]
-    }else if(~~(coordSelectedCeil/10) === 9){
-        nearCeils = [coordSelectedCeil + 1, coordSelectedCeil - 10, 
-            coordSelectedCeil - 9, coordSelectedCeil - 1, coordSelectedCeil - 11]
+export const getNearCells = (coordSelectedCell) => {
+    let nearCells = [];
+    if(coordSelectedCell === 0){
+        nearCells = [1, 10, 11]
+    }else if(coordSelectedCell === 9){
+        nearCells = [8, 18, 19]
+    }else if(coordSelectedCell === 99){
+        nearCells = [88, 89, 98]
+    }else if(coordSelectedCell === 90){
+        nearCells = [80, 81, 91]
+    }else if(coordSelectedCell%10 === 9){
+        nearCells = [coordSelectedCell - 10, coordSelectedCell + 10, 
+            coordSelectedCell + 9, coordSelectedCell - 1, coordSelectedCell - 11]
+    }else if(coordSelectedCell%10 === 0){
+        nearCells = [coordSelectedCell - 10, coordSelectedCell - 9, coordSelectedCell + 1, coordSelectedCell + 11,
+            coordSelectedCell + 10]
+    }else if(~~(coordSelectedCell/10) === 0){
+        nearCells = [coordSelectedCell - 1, coordSelectedCell + 10, 
+            coordSelectedCell + 9, coordSelectedCell + 1, coordSelectedCell + 11]
+    }else if(~~(coordSelectedCell/10) === 9){
+        nearCells = [coordSelectedCell + 1, coordSelectedCell - 10, 
+            coordSelectedCell - 9, coordSelectedCell - 1, coordSelectedCell - 11]
     }else{
-        nearCeils = [coordSelectedCeil - 10, coordSelectedCeil - 9, coordSelectedCeil + 1, coordSelectedCeil + 11,
-            coordSelectedCeil + 10, coordSelectedCeil + 9, coordSelectedCeil - 1, coordSelectedCeil - 11]
+        nearCells = [coordSelectedCell - 10, coordSelectedCell - 9, coordSelectedCell + 1, coordSelectedCell + 11,
+            coordSelectedCell + 10, coordSelectedCell + 9, coordSelectedCell - 1, coordSelectedCell - 11]
     }
-    return nearCeils;
+    return nearCells;
 }
-export const RandomArangeShip = (gapMap, lengthShip, selectedCeilBefore) => {
-    let clearCeils = 0;
-    gapMap.forEach(ceil => {
-        if(ceil===0){
-            clearCeils++;
+export const RandomArangeShip = (gapMap, lengthShip, selectedCellBefore) => {
+    let clearCells = 0;
+    gapMap.forEach(cell => {
+        if(cell===0){
+            clearCells++;
         }
     });
-    let selectedCeil = -1;
-    if(!selectedCeilBefore || (selectedCeilBefore + 1) > 99){
-        selectedCeil = Math.floor(Math.random() * (clearCeils));
+    let selectedCell = -1;
+    if(!selectedCellBefore || (selectedCellBefore + 1) > 99){
+        selectedCell = Math.floor(Math.random() * (clearCells));
     }else{
-        selectedCeil = selectedCeilBefore + 1
+        selectedCell = selectedCellBefore + 1
     }
     const selectedOrientation = Math.floor(Math.random() * 2);
     let counter = 0;
-    let coordSelectedCeil = 0;
+    let coordSelectedCell = 0;
     for(let i = 0; i < 100; i++){
         if(gapMap[i] === 0){
             counter++;
-            if(counter === selectedCeil){
-                coordSelectedCeil = i;
+            if(counter === selectedCell){
+                coordSelectedCell = i;
             }
         }
     }
-    if(selectedOrientation && (coordSelectedCeil%10 + lengthShip) < 10 ){
+    if(selectedOrientation && (coordSelectedCell%10 + lengthShip) < 10 ){
         for(let i = 0; i < lengthShip; i++){
-            if(gapMap[coordSelectedCeil + i] > 0){
-                return RandomArangeShip(gapMap, lengthShip, selectedCeil)
+            if(gapMap[coordSelectedCell + i] > 0){
+                return RandomArangeShip(gapMap, lengthShip, selectedCell)
             }
         }
         for(let i = 0; i < lengthShip; i++){
-            gapMap[coordSelectedCeil + i] = 2;
-            getNearCeils(coordSelectedCeil + i).map(ceil => gapMap[ceil] = Math.max(1, gapMap[ceil]))
+            gapMap[coordSelectedCell + i] = 2;
+            getNearCells(coordSelectedCell + i).map(cell => gapMap[cell] = Math.max(1, gapMap[cell]))
         }
         return gapMap
-    }else if(!selectedOrientation && (~~(coordSelectedCeil/10) + lengthShip) < 10){
+    }else if(!selectedOrientation && (~~(coordSelectedCell/10) + lengthShip) < 10){
         for(let i = 0; i < lengthShip; i++){
-            if(gapMap[coordSelectedCeil + 10*i] > 0){
-                return RandomArangeShip(gapMap, lengthShip, selectedCeil)
+            if(gapMap[coordSelectedCell + 10*i] > 0){
+                return RandomArangeShip(gapMap, lengthShip, selectedCell)
             }
         }
         for(let i = 0; i < lengthShip; i++){
-            gapMap[coordSelectedCeil + 10*i] = 2;
-            getNearCeils(coordSelectedCeil + 10*i).map(ceil => gapMap[ceil] = Math.max(1, gapMap[ceil]))
+            gapMap[coordSelectedCell + 10*i] = 2;
+            getNearCells(coordSelectedCell + 10*i).map(cell => gapMap[cell] = Math.max(1, gapMap[cell]))
         }
         return gapMap
     }else{
-        return RandomArangeShip(gapMap, lengthShip, selectedCeil)
+        return RandomArangeShip(gapMap, lengthShip, selectedCell)
     }
         
 
@@ -133,4 +86,49 @@ export const RandomArangeShips = () => {
         }
     }
     return gapArange
+}
+export const checkShip = ({coord, map}) => {
+    let nearCells = getNearCells(coord);
+    let horizontal = false;
+    let ship = [coord];
+    nearCells.forEach(cell => {
+        if(map[cell] === 2 || map[cell] === 4){
+            ship.push(cell);
+            if(Math.abs(coord - cell) === 1){
+                horizontal = true;
+            }
+        }
+    })
+    if(horizontal){
+        const left = Math.min.apply(null, ship);
+        const right = Math.max.apply(null, ship);
+        if((~~((left - 1) / 10) === ~~(left / 10)) && (map[left - 1] === 2 || map[left - 1] === 4)){
+            ship.push(left - 1);
+            if((~~((left - 2) / 10) === ~~(left / 10)) && (map[left - 2] === 2 || map[left - 2] === 4)){
+                ship.push(left - 2);
+            }
+        }
+        if((~~((right + 1) / 10) === ~~(right / 10)) && (map[right + 1] === 2 || map[right + 1] === 4)){
+            ship.push(right + 1);
+            if((~~((right + 2) / 10) === ~~(right / 10)) && (map[right + 2] === 2 || map[right + 2] === 4)){
+                ship.push(right + 2);
+            }
+        }
+    }else{
+        const top = Math.min.apply(null, ship);
+        const bottom = Math.max.apply(null, ship);
+        if(map[top - 10] === 2 || map[top - 10] === 4){
+            ship.push(top - 10);
+            if(map[top - 20] === 2 || map[top - 20] === 4){
+                ship.push(top - 20);
+            }
+        }
+        if(map[bottom + 10] === 2 || map[bottom + 10] === 4){
+            ship.push(bottom + 10);
+            if(map[bottom + 20] === 2 || map[bottom + 20] === 4){
+                ship.push(bottom + 20);
+            }
+        }
+    }
+    return ship;
 }

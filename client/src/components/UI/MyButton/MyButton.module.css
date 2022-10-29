@@ -3,7 +3,6 @@
     font-size: 24px;
     border-radius: 5px;
     background-color: transparent;
-    padding: 10px 0px;
     border:#20b0b1ff 2px solid;
     color: #20b0b1ff;
     font-weight: 600;
@@ -11,11 +10,19 @@
     margin-top: 20px;
     transition: all 0.2s ease-out;
 }
+.MyButton p{
+    padding: 10px 0px;
+}
+.MyButton svg{
+    display: flex;
+	align-items: center;
+	justify-content: center;
+    margin: 0px auto;
+    padding:0px;
+}
 .MyButton:hover{
     background-color: #20b0b1ff;
     color:white;
-}
-.MyButton:hover g{
     fill:white;
 }
 .MyButton:disabled{

@@ -1,10 +1,10 @@
 import React from 'react';
 import classes from './MyToogle.module.css'
 
-const MyToogle = ({elements, active, setActive}) => {
-
+const MyToogle = ({elements, active, setActive, darkmode}) => {
+    
     return (
-        <div className={classes.MyToogle}>
+        <div className={[classes.MyToogle, darkmode ? classes.darkmode : ''].join(' ')}>
             {elements.map(el => {
                 if(active===el){
                     return <button className={[classes.MyElToogle, classes.active].join(' ')} key={el}>{el}</button>
