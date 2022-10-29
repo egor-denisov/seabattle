@@ -5,9 +5,13 @@ A real-time game SeaBattle with the ability to play against other people or the 
 Built on [React.js](https://reactjs.org/) and [Socket.io](https://socket.io/).
 
 ## Content
-- First
-- Second
-- Third
+- [Live Demo](https://github.com/egor-denisov/seabattle#live-demo)
+- [Final product](https://github.com/egor-denisov/seabattle#final-product)
+- [Running the project](https://github.com/egor-denisov/seabattle#running-the-project)
+- [About the game](https://github.com/egor-denisov/seabattle#about-the-game)
+- [Features](https://github.com/egor-denisov/seabattle#features)
+- [Dependencies](https://github.com/egor-denisov/seabattle#dependencies)
+- [Credits](https://github.com/egor-denisov/seabattle#credits)
 
 ## Live Demo
 Live demo is not available at the moment
