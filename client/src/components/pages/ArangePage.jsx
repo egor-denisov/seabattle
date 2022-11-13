@@ -9,10 +9,10 @@ const ArangeShip = ({setMap, ready, disabled, width, ...props}) => {
     }
     return (
         <div className='arangePage'>
-            <p>Arange ships</p>
+            <div className='title'><p>Arange ships</p></div>
             <div className='battleMaps'>
                 <div className='gameblock'>
-                    <GameBlock {...props} arange={true}/>
+                    <GameBlock {...props} arange={!(/Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test(navigator.userAgent))}/>
                 </div>
                 {width < 670
                 ?<div className='next-row'></div>

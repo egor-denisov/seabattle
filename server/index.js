@@ -33,14 +33,14 @@ io.on("connection", socket => {
             timeStartTimer: Date.now(),
             time: time,
             move: move
-        }
+        };
         return timerData;
     };
     socket.on('searchTimer', (room) => {
         if(timers.has(room)){
-            const t = timers.get(room)
+            const t = timers.get(room);
             if(t.timeForMove !== false){
-                socket.emit('changeTimer', t.time + t.timeStartTimer - Date.now())
+                socket.emit('changeTimer', t.time + t.timeStartTimer - Date.now());
             }
         }
     });
@@ -67,7 +67,7 @@ io.on("connection", socket => {
                     timeToMove: timeToMove
                 };
                 socket.emit('reconnectToRoom', reconnData);
-                io.to(data.enemyID).emit('enemyReconnect', {room: data.room, enemy: data.id});
+                io.to(data.enemyID).emit('enemyReconnect', {room: data.room, enemy: data.id, time: time, move: reconnData.move});
                 timers.set(data.room, timer({move: reconnData.move, 
                                              waiter: (data.id === reconnData.move) ? data.enemyID : data.id, 
                                              time: time}));
@@ -103,7 +103,7 @@ io.on("connection", socket => {
                 enemyNick: nickname,
                 timeToMove: timeToMove
             });
-            timers.set(data.room, timer({move: data.id, waiter: data.enemyID, time: timeToMove*1000}))
+            timers.set(data.room, timer({move: data.id, waiter: data.enemyID, time: timeToMove*1000}));
         }
     });
     // shooting
@@ -114,14 +114,14 @@ io.on("connection", socket => {
             tempEnemyMap = [...tempEnemyMap.slice(0, coord), 3, ...tempEnemyMap.slice(coord + 1)];
             socket.emit('missShoot', coord);
             io.to(enemy).emit('nextGambit', coord);
-            timers.set(room, timer({move: enemy, waiter: id, time: users.inGameUsers.get(id).timeToMove * 1000}))
+            timers.set(room, timer({move: enemy, waiter: id, time: users.inGameUsers.get(id).timeToMove * 1000}));
         }else if(tempEnemyMap[coord] === 2){
             tempEnemyMap = [...tempEnemyMap.slice(0, coord), 4, ...tempEnemyMap.slice(coord + 1)];
             const ship = checkShip({coord: coord, map: tempEnemyMap});
             if(!ship.map(cell => tempEnemyMap[cell]).includes(2)){
                 let nearCells = [];
                 ship.forEach(cell => {
-                    nearCells = [...nearCells, ...getNearCells(cell)]
+                    nearCells = [...nearCells, ...getNearCells(cell)];
                 });
                 socket.emit('shipBroken', {nearCells: nearCells,
                                            field: true,
@@ -140,7 +140,7 @@ io.on("connection", socket => {
                 io.to(enemy).emit('hit', coord);
             }
             if(users.inGameUsers.has(id)){
-                timers.set(room, timer({move: id, waiter: enemy, time: users.inGameUsers.get(id).timeToMove * 1000}))
+                timers.set(room, timer({move: id, waiter: enemy, time: users.inGameUsers.get(id).timeToMove * 1000}));
             }
         }
         users.inGameUsers.set(enemy, {...users.inGameUsers.get(enemy), gameMap: tempEnemyMap});

@@ -11,10 +11,10 @@ import { RandomArangeShips, checkShip, getNearCells } from './utils/methodsOfShi
 import { moveAI } from './utils/ai';
 import io from "socket.io-client";
 import { uniqueNamesGenerator, adjectives, animals } from 'unique-names-generator';
-import { useCookies } from "react-cookie";
+// import { useCookies } from "react-cookie";
 import MyButton from './components/UI/MyButton/MyButton';
 import MySetting from './components/UI/MySetting/MySetting';
-const socket = io.connect('http://localhost:5000');
+const socket = io.connect('http://192.168.1.101:5000');
 const getRandomNick = () => {return uniqueNamesGenerator({dictionaries: [adjectives, animals],
                                                           style: 'capital'}
 )};
@@ -29,15 +29,14 @@ const App = () => {
   const [enemyID, setEnemyID] = useState('');
   const [roomID, setRoomID] = useState('');
   const [move, setMove] = useState(false);
-  const [gameMode, setGameMode] = useState('AI');
+  const [gameMode, setGameMode] = useState('RP');
   const [gameSpeed, setGameSpeed] = useState('Fast');
   const [timeToMove, setTimeToMove] = useState(19);
   const [nickname, setNickname] = useState(getRandomNick());
   const [winner, setWinner] = useState(false);
   const [enemyNick, setEnemyNick] = useState('Enemy');
-  const [cookies, setCookie, removeCookie] = useCookies(["socketID", "maps", "localGame"]);
   const [woundedShip, setWoundedShip] = useState([]);
-  const [darkmode, setDarkmode] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const [darkmode, setDarkmode] = useState((localStorage.getItem("darkmode") !== null) ? localStorage.getItem("darkmode") === "true" : window.matchMedia('(prefers-color-scheme: dark)').matches);
   const [menuActive, setMenuActive] = useState(false);
   const [enemyReconn, setEnemyReconn] = useState(false);
   const newGame = () => {
@@ -54,14 +53,22 @@ const App = () => {
   }
   // COOKIES
   const handleRemoveCookies = () => {
-    removeCookie(["socketID", "maps", "localGame"]);
+    localStorage.clear();
+  }
+  const getLocalData = (name, key) => {
+    const savedItem = localStorage.getItem(name);
+    const parsedItem = JSON.parse(savedItem);
+    return parsedItem[key]
   }
   useEffect(() => {
-    if(cookies.socketID !== undefined && myID !== ''){
-      socket.emit('wasInGame', cookies.socketID.id);
-      handleRemoveCookies();
+    if(localStorage.getItem("socketID") !== null && myID !== ''){
+      socket.emit('wasInGame', getLocalData("socketID", "id"));
     }
   }, [myID]);
+  // COLORMODE
+  useEffect(() => {
+    localStorage.setItem('darkmode', darkmode)
+  }, [darkmode]);
   // SPEED GAME
   useEffect(() => {
     setTimeToMove(gameSpeed === 'Fast' ? 19 : 59);
@@ -96,35 +103,33 @@ const App = () => {
     setTime(t);
   };
   useEffect( () => {
-    socket.on('changeTimer', (t) => {// ошибка при разделении экрана из-за срабатывания онфокус при шутинге на неактивной странице
+    socket.on('changeTimer', (t) => {
       resetTimer(~~(t/1000) + 1);
       setTimeout(() => resetTimer(~~(t/1000)), t%1000);
     });
   }, []);
   useEffect( () => {
-    if(cookies.localGame !== undefined){
-      const t = cookies.localGame.startTime - Date.now() + cookies.localGame.time*1000;
+    if(localStorage.getItem("localGame") !== null){
+      const t = getLocalData("localGame", "startTime") - Date.now() + getLocalData("localGame", "time")*1000;
       if( t > 0 ){
         setGameMode('AI')
         setPage(3);
         setEnemyNick("Computer");
         setMove(true);
-        setGameMap(cookies.maps.player);
-        setEnemyMap(cookies.maps.enemy);
-        setHideEnemyMap(cookies.localGame.hideEnemyMap);
-        setTimeToMove(cookies.localGame.time);
+        setGameMap(getLocalData("maps", "player"));
+        setEnemyMap(getLocalData("maps", "enemy"));
+        setHideEnemyMap(getLocalData("localGame", "hideEnemyMap"));
+        setTimeToMove(getLocalData("localGame", "time"));
         resetTimer(~~(t/1000) + 1);
         setTimeout(() => resetTimer(~~(t/1000)), t%1000);
       }
-    }else{
-      removeCookie(["socketID", "maps", "localGame"]);
     }
   }, [])
   window.onfocus = () => {
     if(page === 3 && gameMode === 'RP'){
       socket.emit('searchTimer', roomID);
     }else if(page === 3 && gameMode === 'AI'){
-      const t = cookies.localGame.startTime - Date.now() + cookies.localGame.time*1000;
+      const t = getLocalData("localGame", "startTime") - Date.now() + getLocalData("localGame", "time")*1000;
       if(t > 0){
         resetTimer(~~(t/1000) + 1);
         setTimeout(() => resetTimer(~~(t/1000)), t%1000);
@@ -137,7 +142,7 @@ const App = () => {
   const userReady = () => {
     if(gameMap.filter(x => x===2).length === 20){
       if(gameMode === 'RP'){
-        removeCookie(["socketID", "maps", "localGame"]);
+        handleRemoveCookies();
         socket.emit('ready', {gameMap: gameMap, nickname: nickname, timeToMove: timeToMove});
         setPage(2);
       }else{
@@ -147,16 +152,14 @@ const App = () => {
         resetTimer(timeToMove);
         let temp_map = RandomArangeShips();
         setHideEnemyMap(temp_map);
-        setCookie('localGame', {startTime: Date.now(), time: timeToMove, hideEnemyMap: temp_map}, {
-          path: "/"
-        });
+        localStorage.setItem("localGame", `{"startTime": ${Date.now()}, "time": ${timeToMove}, "hideEnemyMap": [${temp_map}]}`);
       }
     }else{
       setViewModal({view: true, text: 'Not all ships in field!'})
     }
   }
   const gameOver = (win) => {
-    removeCookie(["socketID", "maps", "localGame"]);
+    handleRemoveCookies();
     setOverTime(true);
     setWinner(win);
     setPage(4);
@@ -187,7 +190,7 @@ const App = () => {
     return [...tempMap];
   }
   const shoot = (coord) => {
-    if(gameMode === 'RP'){
+    if(gameMode === 'RP' || localStorage.getItem("localGame") === null){
       socket.emit('shoot', {id: myID, room: roomID, enemy: enemyID, coord: coord});
     }else if(enemyMap[coord] === 0){
       if(hideEnemyMap[coord] < 2){
@@ -228,12 +231,8 @@ const App = () => {
                                   4: [coord]}, enemyMap))
         resetTimer(timeToMove);
       }
-    setCookie('localGame', {startTime: Date.now(), time: timeToMove, hideEnemyMap: hideEnemyMap}, {
-      path: "/"
-    });
-    setCookie('maps', {player: gameMap, enemy: enemyMap}, {
-      path: "/"
-    });
+    localStorage.setItem("localGame", `{"startTime": ${Date.now()}, "time": ${timeToMove}, "hideEnemyMap": [${hideEnemyMap}]}`)
+    localStorage.setItem("maps", `{"player": [${gameMap}], "enemy": [${enemyMap}]}`);
     }
     
   }
@@ -265,25 +264,26 @@ const App = () => {
       setPage(3);
       setEnemyNick(enemyNick);
       setMove(id === move);
-      setGameMap(cookies.maps.player);
-      setEnemyMap(cookies.maps.enemy);
+      setGameMap(getLocalData("maps", "player"));
+      setEnemyMap(getLocalData("maps", "enemy"));
       setEnemyReconn(false);
       setTimeToMove(timeToMove);
       resetTimer(~~(time/1000) + 1);
       setTimeout(() => resetTimer(~~(time/1000)), time%1000);
-      setCookie('socketID', {id: id}, {
-        path: "/"
-      });
+      localStorage.setItem("socketID", `{"id": "${id}"}`);
     });
     socket.on('timerToReconnect', () => {
       setEnemyReconn(true);
       setMove(false);
       resetTimer(10);
     })
-    socket.on('enemyReconnect', ({room, enemy}) => {
+    socket.on('enemyReconnect', ({room, enemy, time, move}) => {
+      setMove(!(enemy === move));
       setEnemyReconn(false);
       setRoomID(room);
       setEnemyID(enemy);
+      resetTimer(~~(time/1000) + 1);
+      setTimeout(() => resetTimer(~~(time/1000)), time%1000);
     });
     socket.on('startGame', ({firstMove, id, room, enemyID, enemyNick, timeToMove}) =>{
       setRoomID(room);
@@ -292,22 +292,19 @@ const App = () => {
       setEnemyNick(enemyNick);
       setMove(id === firstMove);
       resetTimer(timeToMove);
-      setCookie('socketID', {id: id}, {
-        path: "/"
-      });
+      localStorage.setItem("socketID", `{"id": "${id}"}`);
     });
     socket.on('gameOver', ({win, status}) => {
       if(status === 'discon'){
         setViewModal({view: true, text: 'Enemy left the game...'});
       }
       gameOver(win);
-      removeCookie(["socketID", "maps", "localGame"]);
     });
   }, []);
   useEffect(() => {
-    setCookie('maps', {player: gameMap, enemy: enemyMap}, {
-      path: "/"
-    });
+    if(gameMap.reduce((a, b) => a + b, 0) !== 0){
+      localStorage.setItem("maps", `{"player": [${gameMap}], "enemy": [${enemyMap}]}`);
+    }
     //Shooting
     socket.on('missShoot', coord => {
       setEnemyMap(setCellToMap({3: [coord]}, enemyMap));
@@ -395,7 +392,6 @@ const App = () => {
                   menuActive={menuActive}/>
       
       {getPage(page)}
-      <div onClick={() => removeCookie(["socketID", "maps", "localGame"])}>gtgtg</div>
     </div>
   );
 }
