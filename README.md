@@ -5,7 +5,7 @@ A real-time game SeaBattle with the ability to play against other people or the 
 Built on [React.js](https://reactjs.org/) and [Socket.io](https://socket.io/).
 
 ## Timelapse
-This project was developed from September `22 to November `22.
+This project was developed from September '22 to November '22.
 
 ## Content
 - [Live Demo](https://github.com/egor-denisov/seabattle#live-demo)
