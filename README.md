@@ -31,8 +31,6 @@ Live demo is not available at the moment
 - Battle page:
 ![](https://sun9-east.userapi.com/sun9-25/s/v1/ig2/wneNRVCZIsHxVwyIZEqUxQ8gpdCErEaJ-zUfasAZFAg9LfDTNGeFVboCEOlfmABPI8p3_TeNa_SXJ7Yh4qMFqfWn.jpg?size=1913x923&quality=95&type=album "Battle page")
 
-- Battle page on mobile phone:
-![](https://sun9-east.userapi.com/sun9-34/s/v1/ig2/9OIaDTL1xY7igCQRVXquEy-3Uyf_yCCgj2upXIusHYkLWyhEmwe-QxFpTls2ZGtL4LaUMaixBTvIQC0CKNWNHGal.jpg?size=385x837&quality=95&type=album "Battle page on mobile phone")
 
 ## Running the project
 To run the project go to the downloaded directory. Then run the commands:
